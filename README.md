@@ -11,6 +11,7 @@
 - 🌱 I’m currently learning **Data Structures, AIML**
 
 - 📫 How to reach me **yash.s.gavas@gmail.com**
+- ✨ Fun Fact about me **I love Gaming**
 
 <h3 align="left">Connect with me:</h3>
 <p align="left">
