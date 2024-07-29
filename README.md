@@ -1,5 +1,5 @@
 ![logo](https://github.com/Yash-Gavas/Yash-Gavas/blob/main/1.jpg)
-<h3 align="center">A passionate software Engineer from India</h3>
+<h3 align="center">A passionate software Engineer</h3>
 
 <img align="right" alt="coding" width="400" src="https://github.com/user-attachments/assets/b342f682-e217-4fc3-af99-0df2916e8827">
 
