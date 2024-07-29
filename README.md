@@ -1,3 +1,4 @@
+![logo](https://github.com/Yash-Gavas/Yash-Gavas/blob/main/1.jpg)
 <h1 align="center">Hi 👋, I'm Yash Suresh Gavas</h1>
 <h3 align="center">A passionate software Engineer from India</h3>
 
