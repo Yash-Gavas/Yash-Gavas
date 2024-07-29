@@ -1,7 +1,7 @@
 ![logo](https://github.com/Yash-Gavas/Yash-Gavas/blob/main/1.jpg)
 <h3 align="center">A passionate software Engineer</h3>
 
-<img align="right" alt="coding" width="400" src="https://github.com/user-attachments/assets/b342f682-e217-4fc3-af99-0df2916e8827">
+<img align="right" alt="coding" width="400" src="https://github.com/user-attachments/assets/cd414e72-eba5-4f28-b305-cdc47cab6b2b">
 
 <p align="left"> <img src="https://komarev.com/ghpvc/?username=yash-gavas&label=Profile%20views&color=0e75b6&style=flat" alt="yash-gavas" /> </p>
 
