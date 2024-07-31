@@ -15,7 +15,7 @@
 <h3 align="left">Connect with me:</h3>
 <p align="left">
 <a href="https://twitter.com/@gavasyash" target="blank"><img align="center" src="https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/twitter.svg" alt="@gavasyash" height="30" width="40" /></a>
-<a href="https://linkedin.com/in/yash gavas" target="blank"><img align="center" src="https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/linked-in-alt.svg" alt="yash gavas" height="30" width="40" /></a>
+<a href="https://www.linkedin.com/in/yash-suresh-gavas-5aba28259/" target="blank"><img align="center" src="https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/linked-in-alt.svg" alt="https://www.linkedin.com/in/yash-suresh-gavas-5aba28259/" height="30" width="40" /></a>
 <a href="https://kaggle.com/yashgavas" target="blank"><img align="center" src="https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/kaggle.svg" alt="yashgavas" height="30" width="40" /></a>
 <a href="https://instagram.com/yash_gavas" target="blank"><img align="center" src="https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/instagram.svg" alt="yash_gavas" height="30" width="40" /></a>
 <a href="https://www.hackerrank.com/yash_s_gavas" target="blank"><img align="center" src="https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/hackerrank.svg" alt="yash_s_gavas" height="30" width="40" /></a>
