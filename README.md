@@ -1,7 +1,7 @@
 # portfolio-site
 
 <p align="center">
-  <img src="./assets/banner.svg" alt="banner" width="100%" />
+  <img src="Yash_LinkedIn_Banner_White_HQ.png" alt="banner" width="100%" />
 </p>
 
 <p align="left"> <img src="https://komarev.com/ghpvc/?username=yash-gavas&label=Profile%20views&color=0e75b6&style=flat" alt="yash-gavas" /> </p>
