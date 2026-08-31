@@ -6,8 +6,6 @@
 
 <p align="left"> <img src="https://komarev.com/ghpvc/?username=yash-gavas&label=Profile%20views&color=0e75b6&style=flat" alt="yash-gavas" /> </p>
 
-<p align="left"> <a href="https://github.com/ryo-ma/github-profile-trophy"><img src="https://github-profile-trophy.vercel.app/?username=yash-gavas" alt="yash-gavas" /></a> </p>
-
 - 🌱 Currently deepening my expertise in **Distributed Systems & Advanced Backend Architecture**
 - 💼 Recent experience: **Research Intern @ Samsung R&D Institute** (Java SDK for Samsung SmartThings, 50+ IoT devices) and **Python Developer Intern @ Praxien Tech** (workflow automation & operational analytics)
 - 📄 Published researcher — co-author, *"SakhiSuraksha: An AI and IoT-Based Intelligent Emergency Response System for Women's Safety"*, IEEE IITCEE 2026
