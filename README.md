@@ -71,8 +71,4 @@
 - **NestMatch** — Property listing platform with a full CI/CD & observability pipeline (React, Node.js, PostgreSQL, Docker, GitHub Actions, Prometheus, Grafana)
 - **DefiHub** — Decentralized staking & portfolio dashboard (Solidity, React, Web3.js, MetaMask)
 
-<p><img align="left" src="https://github-readme-stats.vercel.app/api/top-langs?username=yash-gavas&show_icons=true&locale=en&layout=compact" alt="yash-gavas" /></p>
-
-<p>&nbsp;<img align="center" src="https://github-readme-stats.vercel.app/api?username=yash-gavas&show_icons=true&locale=en" alt="yash-gavas" /></p>
-
 <p><img align="center" src="https://github-readme-streak-stats.herokuapp.com/?user=yash-gavas&" alt="yash-gavas" /></p>
