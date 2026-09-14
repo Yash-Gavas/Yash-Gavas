@@ -170,7 +170,7 @@ distributed architectures, and automates the parts of the job that don't need a 
   </a>
 </td>
 <td width="50%">
-  <a href="https://github.com/Yash-Gavas/Voyage">
+  <a href="https://github.com/Yash-Gavas/Voyage-Hotel-Booking-Microservices-Platform-Microservices-Architecture-Backend-Development-">
     <picture>
       <source media="(prefers-color-scheme: dark)"  srcset="assets/card-Voyage-dark.svg">
       <source media="(prefers-color-scheme: light)" srcset="assets/card-Voyage-light.svg">
@@ -204,7 +204,7 @@ distributed architectures, and automates the parts of the job that don't need a 
 | project | stack | highlight |
 |---|---|---|
 | **[DEV-Arena](https://github.com/Yash-Gavas/DEV-Arena)** | `Next.js` `FastAPI` `Docker` `GDB-MI` `Whisper` `MediaPipe` | AI technical-interview platform with a "Glass-Box" IDE and live hardware telemetry tracing |
-| **[Voyage](https://github.com/Yash-Gavas/Voyage)** | `Java Spring Boot` `Netflix Eureka` `PostgreSQL` `MongoDB` `Vue.js` | 8-service distributed architecture, polyglot persistence, 90% faster startup via PowerShell orchestration |
+| **[Voyage](https://github.com/Yash-Gavas/Voyage-Hotel-Booking-Microservices-Platform-Microservices-Architecture-Backend-Development-)** | `Java Spring Boot` `Netflix Eureka` `PostgreSQL` `MongoDB` `Vue.js` | 8-service distributed architecture, polyglot persistence, 90% faster startup via PowerShell orchestration |
 | **[Sakhi Suraksha](https://github.com/Yash-Gavas/Sakhi-Suraksha)** | `React Native` `Node.js` `LLaMA3` `PostgreSQL` `WebRTC` | Real-time AI threat detection for women's safety — backs the IEEE IITCEE 2026 publication |
 | **[NestMatch](https://github.com/Yash-Gavas/NestMatchFinder)** | `React` `Node.js` `PostgreSQL` `Docker` `GitHub Actions` `Prometheus` `Grafana` | Property listing platform with full CI/CD + observability, 70% faster deploys |
 | **[DefiHub](https://github.com/Yash-Gavas/DefiHub-BlockChain-)** | `Solidity` `React` `Web3.js` `MetaMask` | Decentralized staking & portfolio dashboard with live blockchain integration |
