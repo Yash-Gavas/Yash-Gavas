@@ -73,7 +73,7 @@ snake every 12h, radar daily).
 The current one was made with:
 
 ```powershell
-python scripts\dotify.py assets\portrait-source.png -o assets\portrait --cols 100 --equalize --detail 0.5 --color --reveal
+python scripts\dotify.py assets\portrait-source.png -o assets\portrait --cols 170 --equalize --detail 0.5 --color --reveal
 ```
 
 Other looks from the same source:
@@ -101,8 +101,9 @@ Worth knowing:
 - `--color` keeps each dot's original pixel colour. Because the fills then come from the
   photo rather than a theme, it writes a single `portrait.svg` instead of a
   `-dark`/`-light` pair — the README references it directly.
-- `--cols` is the whole quality/size dial. 60 is chunky and abstract, 100 is what's in
-  use now (325 KB), 130 is more detailed but pushes past 500 KB.
+- `--cols` is the whole quality/size dial. 60 is chunky and abstract, 100 reads soft at
+  anything past thumbnail size, 170 is what's in use now (~290 KB) and holds up at the
+  380px the README displays it at.
 - `--reveal` draws the portrait in row by row when the page loads, like a slow scan.
   `--reveal-time` is the full top-to-bottom sweep (2.5s), `--reveal-fade` is how long
   one row takes to appear (0.45s — this is what makes it a soft scan rather than a hard
