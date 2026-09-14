@@ -6,10 +6,9 @@
       "description": "AI-powered technical interview platform with a real-time 'Glass-Box' IDE - GDB-MI hardware telemetry, Whisper transcription, and an LLM evaluation engine."
     },
     {
-      "repo": "REPLACE_ME_VOYAGE_SLUG",
+      "repo": "Voyage-Hotel-Booking-Microservices-Platform-Microservices-Architecture-Backend-Development-",
       "display": "Voyage",
-      "description": "8-service distributed microservices architecture with Netflix Eureka discovery and polyglot persistence across PostgreSQL and MongoDB.",
-      "_todo": "No repo named 'Voyage' exists under github.com/Yash-Gavas (confirmed 404). Put the real slug here, e.g. the fork/rename of Voyage-Hotel-Booking-Microservices-...  - until then cards.py will skip this entry and the README card/link for it will stay broken."
+      "description": "8-service distributed microservices architecture with Netflix Eureka discovery and polyglot persistence across PostgreSQL and MongoDB."
     },
     {
       "repo": "Sakhi-Suraksha",
