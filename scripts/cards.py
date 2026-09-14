@@ -101,6 +101,58 @@ def graphql(query: str, variables: dict, token: str):
         return json.loads(r.read().decode())
 
 
+LEETCODE_QUERY = """
+query($username:String!){
+  matchedUser(username:$username){
+    submitStatsGlobal{
+      acSubmissionNum{ difficulty count }
+    }
+  }
+  userContestRanking(username:$username){
+    rating
+    globalRanking
+  }
+}
+"""
+
+
+def fetch_leetcode(username: str):
+    """Return (solved_total, easy, medium, hard, contest_rating|None) or None.
+
+    LeetCode's own GraphQL endpoint - public, no auth needed for a public
+    profile's solved counts. Same idiom as the GitHub GraphQL calls above:
+    self-hosted rather than a third-party badge service that can vanish.
+    """
+    body = json.dumps({"query": LEETCODE_QUERY,
+                       "variables": {"username": username}}).encode()
+    req = urllib.request.Request(
+        "https://leetcode.com/graphql", data=body,
+        headers={**UA, "Content-Type": "application/json",
+                 "Referer": f"https://leetcode.com/{username}/"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            data = json.loads(r.read().decode())
+    except urllib.error.URLError as e:
+        print(f"  leetcode stats unavailable ({e})", file=sys.stderr)
+        return None
+
+    user = data.get("data", {}).get("matchedUser")
+    if not user:
+        print(f"  leetcode stats unavailable: no such user '{username}'",
+              file=sys.stderr)
+        return None
+
+    counts = {c["difficulty"]: c["count"]
+              for c in user["submitStatsGlobal"]["acSubmissionNum"]}
+    total = counts.get("All", 0)
+    rating = None
+    ranking = data.get("data", {}).get("userContestRanking")
+    if ranking and ranking.get("rating"):
+        rating = round(ranking["rating"])
+    return total, counts.get("Easy", 0), counts.get("Medium", 0), counts.get("Hard", 0), rating
+
+
 CONTRIB_QUERY = """
 query($login:String!){
   user(login:$login){
@@ -291,6 +343,8 @@ def main(argv=None):
     p.add_argument("--out", type=Path, default=Path("assets"))
     p.add_argument("--projects", type=Path, default=Path("assets/projects.json"),
                    help="repos to render cards for, with description overrides")
+    p.add_argument("--leetcode", metavar="USERNAME",
+                   help="also add a LeetCode-solved tile to the stat card")
     args = p.parse_args(argv)
 
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
@@ -321,6 +375,18 @@ def main(argv=None):
     else:
         print("  note: no usable token, skipping contribution tiles", file=sys.stderr)
 
+    if args.leetcode:
+        lc = fetch_leetcode(args.leetcode)
+        if lc:
+            solved, easy, medium, hard, rating = lc
+            tiles.append(("LeetCode solved", f"{solved:,}"))
+            if rating:
+                tiles.append(("Contest rating", f"{rating:,}"))
+
+    if args.projects.exists():
+        shipped = len(json.loads(args.projects.read_text(encoding="utf-8"))["projects"])
+        tiles.append(("Projects shipped", f"{shipped:,}"))
+
     for theme in ("dark", "light"):
         dest = args.out / f"card-stats-{theme}.svg"
         dest.write_text(render_stats(args.user, tiles, theme), encoding="utf-8")
@@ -337,18 +403,20 @@ def main(argv=None):
         if not src:
             print(f"  !! {entry['repo']} not found on the account, skipped")
             continue
+        slug = entry.get("display") or src["name"]
         card = {
-            "name": src["name"],
+            "name": slug,
             "description": entry.get("description") or src.get("description"),
             "language": entry.get("language") or src.get("language"),
             "stars": src["stargazers_count"],
             "forks": src["forks_count"],
         }
         for theme in ("dark", "light"):
-            dest = args.out / f"card-{src['name']}-{theme}.svg"
+            dest = args.out / f"card-{slug}-{theme}.svg"
             dest.write_text(render_repo(card, theme), encoding="utf-8")
-        print(f"wrote card-{src['name']}-*.svg  "
-              f"({card['stars']}star {card['forks']}fork {card['language']})")
+        print(f"wrote card-{slug}-*.svg  "
+              f"({card['stars']}star {card['forks']}fork {card['language']}, "
+              f"repo: {src['name']})")
 
 
 if __name__ == "__main__":
