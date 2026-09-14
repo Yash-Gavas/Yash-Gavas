@@ -255,17 +255,15 @@ def frame(w, h, c, body, label):
 # --------------------------------------------------------------------------- #
 
 
-def render_stats(user, stats, theme):
+def render_stats(user, sections, theme):
+    """sections: list of (title, [(value, label), ...]) - each drawn as its own
+    labelled block in one card, so GitHub and LeetCode sit together instead of
+    as two separate images the eye has to reconcile."""
     c = THEMES[theme]
     pad = 22
-    tiles = [(v, k) for k, v in stats]
     cols = 3
-    rows = (len(tiles) + cols - 1) // cols
-    # Height follows the tile count, so the card does not leave a dead band when
-    # the contribution tiles are unavailable. Measured off the last row's label
-    # baseline rather than a nominal row height.
-    rh, W = 46, 480
-    H = pad + 52 + (rows - 1) * rh + 17 + pad
+    rh = 46
+    W = 480
     tw = (W - 2 * pad) / cols
 
     out = [
@@ -276,18 +274,35 @@ def render_stats(user, stats, theme):
         f'<line x1="{pad}" y1="{pad + 26}" x2="{W - pad}" y2="{pad + 26}" '
         f'stroke="{c["border"]}"/>',
     ]
-    top = pad + 52
-    for i, (value, label) in enumerate(tiles):
-        cx = pad + (i % cols) * tw
-        cy = top + (i // cols) * rh
-        out.append(
-            f'<text x="{cx:.0f}" y="{cy:.0f}" font-size="23" font-weight="700" '
-            f'fill="{c["value"]}">{esc(value)}</text>'
-        )
-        out.append(
-            f'<text x="{cx:.0f}" y="{cy + 17:.0f}" font-size="10.5" '
-            f'fill="{c["muted"]}">{esc(label)}</text>'
-        )
+    y = pad + 26
+    for si, (title, tiles) in enumerate(sections):
+        if not tiles:
+            continue
+        rows = (len(tiles) + cols - 1) // cols
+        if si > 0:
+            y += 14
+            out.append(f'<line x1="{pad}" y1="{y:.0f}" x2="{W - pad}" y2="{y:.0f}" '
+                        f'stroke="{c["border"]}" stroke-dasharray="3,3"/>')
+            y += 20
+        else:
+            y += 24
+        out.append(f'<text x="{pad}" y="{y:.0f}" font-size="10.5" font-weight="700" '
+                    f'letter-spacing="0.06em" fill="{c["accent"]}">{esc(title.upper())}</text>')
+        y += 22
+        top = y
+        for i, (value, label) in enumerate(tiles):
+            cx = pad + (i % cols) * tw
+            cy = top + (i // cols) * rh
+            out.append(
+                f'<text x="{cx:.0f}" y="{cy:.0f}" font-size="23" font-weight="700" '
+                f'fill="{c["value"]}">{esc(value)}</text>'
+            )
+            out.append(
+                f'<text x="{cx:.0f}" y="{cy + 17:.0f}" font-size="10.5" '
+                f'fill="{c["muted"]}">{esc(label)}</text>'
+            )
+        y = top + (rows - 1) * rh + 17
+    H = round(y + pad)
     return frame(W, H, c, "".join(out), f"{user} GitHub statistics")
 
 
@@ -362,35 +377,42 @@ def main(argv=None):
     owned = [r for r in repos if not r["fork"]]
     stars = sum(r["stargazers_count"] for r in owned)
 
-    tiles = [("Total stars", f"{stars:,}"),
-             ("Public repos", f"{user['public_repos']:,}"),
-             ("Followers", f"{user['followers']:,}")]
+    github_tiles = [("Total stars", f"{stars:,}"),
+                     ("Public repos", f"{user['public_repos']:,}"),
+                     ("Followers", f"{user['followers']:,}")]
 
     contrib = fetch_contributions(args.user, token)
     if contrib:
         total, current, longest = contrib
-        tiles += [("Contributions (1y)", f"{total:,}"),
-                  ("Current streak", f"{current:,}"),
-                  ("Longest streak", f"{longest:,}")]
+        github_tiles += [("Contributions (1y)", f"{total:,}"),
+                          ("Current streak", f"{current:,}"),
+                          ("Longest streak", f"{longest:,}")]
     else:
         print("  note: no usable token, skipping contribution tiles", file=sys.stderr)
+
+    if args.projects.exists():
+        shipped = len(json.loads(args.projects.read_text(encoding="utf-8"))["projects"])
+        github_tiles.append(("Projects shipped", f"{shipped:,}"))
+
+    sections = [("GitHub", github_tiles)]
 
     if args.leetcode:
         lc = fetch_leetcode(args.leetcode)
         if lc:
             solved, easy, medium, hard, rating = lc
-            tiles.append(("LeetCode solved", f"{solved:,}"))
+            leetcode_tiles = [("Solved", f"{solved:,}"),
+                               ("Easy", f"{easy:,}"),
+                               ("Medium", f"{medium:,}"),
+                               ("Hard", f"{hard:,}")]
             if rating:
-                tiles.append(("Contest rating", f"{rating:,}"))
-
-    if args.projects.exists():
-        shipped = len(json.loads(args.projects.read_text(encoding="utf-8"))["projects"])
-        tiles.append(("Projects shipped", f"{shipped:,}"))
+                leetcode_tiles.append(("Contest rating", f"{rating:,}"))
+            sections.append(("LeetCode", leetcode_tiles))
 
     for theme in ("dark", "light"):
         dest = args.out / f"card-stats-{theme}.svg"
-        dest.write_text(render_stats(args.user, tiles, theme), encoding="utf-8")
-    print(f"wrote card-stats-*.svg  ({len(tiles)} tiles)")
+        dest.write_text(render_stats(args.user, sections, theme), encoding="utf-8")
+    tile_count = sum(len(t) for _, t in sections)
+    print(f"wrote card-stats-*.svg  ({len(sections)} sections, {tile_count} tiles)")
 
     if not args.projects.exists():
         print(f"no {args.projects}, skipping repo cards")
