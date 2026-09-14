@@ -95,6 +95,7 @@ def load_grid(path: Path, cols: int, contrast: float, gamma: float,
             mask = square_crop(mask, *focus)
 
     gray = img.convert("L")
+    gray0 = gray  # unprocessed luminance, used below to relight color to match
 
     # A lit face against near-black hair spans a far wider range than the ~10
     # tones a dot ramp can show. Equalising against the subject's own histogram
@@ -109,29 +110,46 @@ def load_grid(path: Path, cols: int, contrast: float, gamma: float,
             radius=radius, percent=round(detail * 100), threshold=0))
     if contrast != 1.0:
         gray = ImageEnhance.Contrast(gray).enhance(contrast)
-        img = ImageEnhance.Contrast(img).enhance(contrast)
+        gray0 = ImageEnhance.Contrast(gray0).enhance(contrast)
 
     w, h = img.size
     # cell_aspect is cell width / cell height: 1.0 for square dot cells,
     # ~0.5 for monospace glyphs (which are about twice as tall as they are wide)
     rows = max(1, round(cols * (h / w) * cell_aspect))
     small_g = gray.resize((cols, rows), Image.Resampling.LANCZOS)
+    small_g0 = gray0.resize((cols, rows), Image.Resampling.LANCZOS)
     if mask is not None:
         small_m = mask.resize((cols, rows), Image.Resampling.LANCZOS)
         small_g = ImageChops.multiply(small_g, small_m)
     small_c = img.resize((cols, rows), Image.Resampling.LANCZOS)
 
-    gp, cp = small_g.load(), small_c.load()
+    gp, g0p, cp = small_g.load(), small_g0.load(), small_c.load()
     rgb, lum = [], []
     for y in range(rows):
         rgb_row, lum_row = [], []
         for x in range(cols):
-            rgb_row.append(cp[x, y])
             v = gp[x, y] / 255.0
+            # Equalize/detail/contrast reshape the luminance used for dot size,
+            # but the colour swatch above is still the camera's raw, unlit
+            # pixel - a highlight that got brightened for sizing purposes (an
+            # eye's sclera, a specular catchlight) stays whatever muted tone
+            # the original exposure gave it, so it never actually looks bright.
+            # Relight the swatch by the same before/after ratio so a boosted
+            # highlight also reads as a brighter (not just bigger) dot.
+            relight = (gp[x, y] + 1) / (g0p[x, y] + 1)
+            relight = min(2.2, max(0.45, relight))
+            cr, cg, cb = cp[x, y]
+            rgb_row.append((
+                min(255, round(cr * relight)),
+                min(255, round(cg * relight)),
+                min(255, round(cb * relight)),
+            ))
             lum_row.append(min(1.0, max(0.0, v ** gamma)))
         rgb.append(rgb_row)
         lum.append(lum_row)
     return cols, rows, lum, rgb
+
+
 
 
 def circle_falloff(x, y, cols, rows, feather=0.06):
