@@ -45,8 +45,11 @@ distributed architectures, and automates the parts of the job that don't need a 
 - 🐍 Python Developer Intern @ **Praxien Tech** (Feb – Apr 2026) — workflow automation & operational analytics, cut manual processing time 35%
 - 📄 Published researcher — co-author, *"SakhiSuraksha: An AI and IoT-Based Intelligent Emergency Response System for Women's Safety"*, IEEE IITCEE 2026
 - 🎓 B.E. in Computer Science, M S Ramaiah Institute of Technology (CGPA 8.96/10) — **Graduated Sep 2026**
+- 🗣️ Languages: **English, Hindi, Marathi, Kannada**
 - 📫 Reach me at **yash.s.gavas@gmail.com**
 - ✨ Fun fact: **I love gaming**
+
+<sub><i>Certifications: AWS Essentials: Beginner's Guide (LearnifyIT/Udemy) · Automate the Boring Stuff with Python Programming (Udemy)</i></sub>
 
 <br>
 
@@ -208,6 +211,7 @@ distributed architectures, and automates the parts of the job that don't need a 
 | **[Sakhi Suraksha](https://github.com/Yash-Gavas/Sakhi-Suraksha)** | `React Native` `Node.js` `LLaMA3` `PostgreSQL` `WebRTC` | Real-time AI threat detection for women's safety — backs the IEEE IITCEE 2026 publication |
 | **[NestMatch](https://github.com/Yash-Gavas/NestMatchFinder)** | `React` `Node.js` `PostgreSQL` `Docker` `GitHub Actions` `Prometheus` `Grafana` | Property listing platform with full CI/CD + observability, 70% faster deploys |
 | **[DefiHub](https://github.com/Yash-Gavas/DefiHub-BlockChain-)** | `Solidity` `React` `Web3.js` `MetaMask` | Decentralized staking & portfolio dashboard with live blockchain integration |
+| Image Captioning ML Research | `CNN-RNN` `Transformer` `MS COCO` `Flickr30k` | Benchmarked CNN-RNN vs. Transformer captioning models — 0.85 BLEU, 0.65 METEOR, presented at an academic seminar |
 
 </div>
 
