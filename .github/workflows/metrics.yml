@@ -15,6 +15,8 @@ jobs:
   metrics:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       # ------------------------------------------------------------------ #
       # The 3D isometric contribution calendar (the one from the inspo)
       # ------------------------------------------------------------------ #
@@ -81,3 +83,11 @@ jobs:
           plugin_achievements_secrets: yes
           plugin_achievements_display: compact
           plugin_achievements_limit: 0
+
+      - name: Commit if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/metrics.*.svg
+          git diff --staged --quiet || git commit -m "chore: refresh metrics"
+          git push
