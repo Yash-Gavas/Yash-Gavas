@@ -377,22 +377,22 @@ def main(argv=None):
     owned = [r for r in repos if not r["fork"]]
     stars = sum(r["stargazers_count"] for r in owned)
 
-    github_tiles = [("Total stars", f"{stars:,}"),
-                     ("Public repos", f"{user['public_repos']:,}"),
-                     ("Followers", f"{user['followers']:,}")]
+    github_tiles = [(f"{stars:,}", "Total stars"),
+                     (f"{user['public_repos']:,}", "Public repos"),
+                     (f"{user['followers']:,}", "Followers")]
 
     contrib = fetch_contributions(args.user, token)
     if contrib:
         total, current, longest = contrib
-        github_tiles += [("Contributions (1y)", f"{total:,}"),
-                          ("Current streak", f"{current:,}"),
-                          ("Longest streak", f"{longest:,}")]
+        github_tiles += [(f"{total:,}", "Contributions (1y)"),
+                          (f"{current:,}", "Current streak"),
+                          (f"{longest:,}", "Longest streak")]
     else:
         print("  note: no usable token, skipping contribution tiles", file=sys.stderr)
 
     if args.projects.exists():
         shipped = len(json.loads(args.projects.read_text(encoding="utf-8"))["projects"])
-        github_tiles.append(("Projects shipped", f"{shipped:,}"))
+        github_tiles.append((f"{shipped:,}", "Projects shipped"))
 
     sections = [("GitHub", github_tiles)]
 
@@ -400,12 +400,12 @@ def main(argv=None):
         lc = fetch_leetcode(args.leetcode)
         if lc:
             solved, easy, medium, hard, rating = lc
-            leetcode_tiles = [("Solved", f"{solved:,}"),
-                               ("Easy", f"{easy:,}"),
-                               ("Medium", f"{medium:,}"),
-                               ("Hard", f"{hard:,}")]
+            leetcode_tiles = [(f"{solved:,}", "Solved"),
+                               (f"{easy:,}", "Easy"),
+                               (f"{medium:,}", "Medium"),
+                               (f"{hard:,}", "Hard")]
             if rating:
-                leetcode_tiles.append(("Contest rating", f"{rating:,}"))
+                leetcode_tiles.append((f"{rating:,}", "Contest rating"))
             sections.append(("LeetCode", leetcode_tiles))
 
     for theme in ("dark", "light"):
