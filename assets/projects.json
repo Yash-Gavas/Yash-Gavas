@@ -1,0 +1,25 @@
+{
+  "_comment": "Featured repos, in README order. Star/fork/language come live from the API on every run; the description here overrides the repo's GitHub description. Check these repo-name guesses against the real casing/slug on github.com/Yash-Gavas and fix any that don't match - cards.py just skips ones it can't find.",
+  "projects": [
+    {
+      "repo": "DEV-Arena",
+      "description": "AI-powered technical interview platform with a real-time 'Glass-Box' IDE - GDB-MI hardware telemetry, Whisper transcription, and an LLM evaluation engine."
+    },
+    {
+      "repo": "Voyage",
+      "description": "8-service distributed microservices architecture with Netflix Eureka discovery and polyglot persistence across PostgreSQL and MongoDB."
+    },
+    {
+      "repo": "Sakhi-Suraksha",
+      "description": "Real-time AI threat detection for women's safety - LLaMA3 + Stanford CoreNLP, live WebRTC tracking, backing an IEEE IITCEE 2026 publication."
+    },
+    {
+      "repo": "NestMatch",
+      "description": "Property rental platform with a full CI/CD and observability pipeline - GitHub Actions, Docker, Prometheus, and Grafana."
+    },
+    {
+      "repo": "DefiHub",
+      "description": "Decentralized staking and portfolio dashboard with live blockchain integration via Solidity, Web3.js, and MetaMask."
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "title": "Skill Radar",
+  "_comment": "Self-rated 0-100, seeded from the resume's Technical Skills section. Edit freely.",
+  "axes": [
+    { "label": "Backend & APIs", "value": 88 },
+    { "label": "Java",           "value": 85 },
+    { "label": "Python",         "value": 82 },
+    { "label": "JavaScript/TS",  "value": 78 },
+    { "label": "Databases",      "value": 76 },
+    { "label": "DevOps & Cloud", "value": 74 },
+    { "label": "DSA",            "value": 80 }
+  ]
+}
