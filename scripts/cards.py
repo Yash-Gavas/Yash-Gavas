@@ -165,11 +165,16 @@ def fetch_leetcode(username: str):
     return total, counts.get("Easy", 0), counts.get("Medium", 0), counts.get("Hard", 0), rating
 
 
-LEETCODE_BADGE_QUERY = """
+LEETCODE_BADGES_QUERY = """
 query($username:String!){
   matchedUser(username:$username){
     badges{ displayName icon }
   }
+}
+"""
+
+LEETCODE_CONTEST_QUERY = """
+query($username:String!){
   userContestRanking(username:$username){
     rating
     topPercentage
@@ -178,6 +183,32 @@ query($username:String!){
   }
 }
 """
+
+
+def leetcode_gql(query: str, username: str):
+    """POST one LeetCode GraphQL query. Returns the `data` dict or {}.
+
+    Each query is sent on its own so one rejected field cannot wipe out the
+    other half of the card, and GraphQL errors are printed so the Actions log
+    says what went wrong.
+    """
+    body = json.dumps({"query": query, "variables": {"username": username}}).encode()
+    req = urllib.request.Request(
+        "https://leetcode.com/graphql", data=body,
+        headers={**BROWSER_UA, "Content-Type": "application/json",
+                 "Referer": f"https://leetcode.com/{username}/",
+                 "Origin": "https://leetcode.com"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            payload = json.loads(r.read().decode())
+    except Exception as e:  # noqa: BLE001
+        print(f"  leetcode request failed ({e})", file=sys.stderr)
+        return {}
+    if payload.get("errors"):
+        print(f"  leetcode graphql error: {payload['errors'][0].get('message')}",
+              file=sys.stderr)
+    return payload.get("data") or {}
 
 
 def fetch_image_uri(url: str, max_bytes: int = 150_000):
@@ -207,26 +238,9 @@ def fetch_image_uri(url: str, max_bytes: int = 150_000):
 
 def fetch_leetcode_badges(username: str):
     """Return dict(contest=..., badges=[(name, data_uri|None)]) or None."""
-    body = json.dumps({"query": LEETCODE_BADGE_QUERY,
-                       "variables": {"username": username}}).encode()
-    req = urllib.request.Request(
-        "https://leetcode.com/graphql", data=body,
-        headers={**BROWSER_UA, "Content-Type": "application/json",
-                 "Referer": f"https://leetcode.com/{username}/"},
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            data = json.loads(r.read().decode())
-    except (urllib.error.URLError, json.JSONDecodeError) as e:
-        print(f"  leetcode badges unavailable ({e})", file=sys.stderr)
-        return None
+    user = leetcode_gql(LEETCODE_BADGES_QUERY, username).get("matchedUser")
+    contest = leetcode_gql(LEETCODE_CONTEST_QUERY, username).get("userContestRanking") or {}
 
-    d = data.get("data") or {}
-    user = d.get("matchedUser")
-    if not user:
-        return None
-
-    contest = d.get("userContestRanking") or {}
     contest_info = None
     if contest.get("rating"):
         contest_info = {
@@ -236,7 +250,9 @@ def fetch_leetcode_badges(username: str):
             "attended": contest.get("attendedContestsCount", 0),
         }
 
-    raw = user.get("badges") or []
+    raw = list((user or {}).get("badges") or [])
+    if not raw and not contest_info:
+        return None
     # contest tiers first, so Knight/Guardian always make the cut
     raw.sort(key=lambda b: 0 if b["displayName"] in ("Knight", "Guardian") else 1)
     badges = []
@@ -560,6 +576,8 @@ def main(argv=None):
     p.add_argument("--hackerrank-fallback", type=Path,
                    default=Path("assets/hackerrank.json"),
                    help="hand-edited badges used when the HackerRank fetch is blocked")
+    p.add_argument("--coding-fallback", type=Path, default=Path("assets/coding.json"),
+                   help="hand-edited LeetCode/HackerRank data used when fetching is blocked")
     args = p.parse_args(argv)
 
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
@@ -618,14 +636,34 @@ def main(argv=None):
     lc_badges = fetch_leetcode_badges(args.leetcode) if args.leetcode else None
     hr_badges = (fetch_hackerrank(args.hackerrank, args.hackerrank_fallback)
                  if args.hackerrank else [])
+
+    manual = {}
+    if args.coding_fallback.exists():
+        try:
+            manual = json.loads(args.coding_fallback.read_text(encoding="utf-8"))
+        except Exception as e:  # noqa: BLE001
+            print(f"  coding fallback unreadable ({e})", file=sys.stderr)
+    if not lc_badges and manual.get("leetcode"):
+        m = manual["leetcode"]
+        lc_badges = {"contest": m.get("contest"),
+                     "badges": [(b, None) for b in m.get("badges", [])]}
+        print("  leetcode: using fallback file", file=sys.stderr)
+    if not hr_badges and manual.get("hackerrank"):
+        hr_badges = [(x["name"], min(int(x["stars"]), 5), int(x.get("solved", 0)))
+                     for x in manual["hackerrank"]]
+        print("  hackerrank: using fallback file", file=sys.stderr)
+
+    if not (lc_badges or hr_badges):
+        if (args.out / "card-coding-dark.svg").exists():
+            print("  coding badges unavailable, keeping existing card", file=sys.stderr)
+        else:  # placeholder so the README image never breaks
+            lc_badges = {"contest": None, "badges": []}
     if lc_badges or hr_badges:
         for theme in ("dark", "light"):
             dest = args.out / f"card-coding-{theme}.svg"
             dest.write_text(render_coding(lc_badges, hr_badges, theme), encoding="utf-8")
         n_lc = len(lc_badges["badges"]) if lc_badges else 0
         print(f"wrote card-coding-*.svg  ({n_lc} leetcode badges, {len(hr_badges)} hackerrank badges)")
-    else:
-        print("  note: no coding badges fetched, skipping card-coding-*.svg", file=sys.stderr)
 
     if not args.projects.exists():
         print(f"no {args.projects}, skipping repo cards")
