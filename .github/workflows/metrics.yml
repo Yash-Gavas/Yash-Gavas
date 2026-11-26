@@ -67,8 +67,8 @@ jobs:
           plugin_languages_sections: most-used
 
       # ------------------------------------------------------------------ #
-      # Achievement badges - the self-hosted replacement for
-      # github-profile-trophy, whose public instance returns 402 (out of quota)
+      # GitHub achievements only (Pull Shark, YOLO, ...). LeetCode and
+      # HackerRank badges come from scripts/cards.py below.
       # ------------------------------------------------------------------ #
       - name: Achievements
         uses: lowlighter/metrics@latest
@@ -84,10 +84,24 @@ jobs:
           plugin_achievements_display: compact
           plugin_achievements_limit: 0
 
+      # ------------------------------------------------------------------ #
+      # Stat card, coding-badges card (LeetCode + HackerRank), repo cards
+      # ------------------------------------------------------------------ #
+      - name: Stat, coding and repo cards
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.METRICS_TOKEN }}
+        run: |
+          python3 scripts/cards.py \
+            --user Yash-Gavas \
+            --leetcode YashGavas \
+            --hackerrank yash_s_gavas \
+            --out assets
+
       - name: Commit if changed
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/metrics.*.svg
+          git add assets/metrics.*.svg assets/card-*.svg
           git diff --staged --quiet || git commit -m "chore: refresh metrics"
           git push
