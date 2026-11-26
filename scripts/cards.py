@@ -6,23 +6,31 @@ Replaces github-readme-stats / github-profile-trophy / streak-stats, which are
 shared public instances that go down (503), run out of quota (402) or time out.
 These are files in your own repo, so they render as long as GitHub renders.
 
-    python scripts/cards.py --user gargibhardwaj24 --out assets
+    python scripts/cards.py --user Yash-Gavas --leetcode YashGavas \
+        --hackerrank yash_s_gavas --out assets
 
-Writes <out>/card-stats-{dark,light}.svg plus one card per repo listed in
-assets/projects.json, as <out>/card-<repo>-{dark,light}.svg.
+Writes <out>/card-stats-{dark,light}.svg, <out>/card-coding-{dark,light}.svg
+(LeetCode badges incl. Knight/Guardian + HackerRank badges), plus one card per
+repo listed in assets/projects.json, as <out>/card-<repo>-{dark,light}.svg.
 
 Star and fork counts come from the live API on every run. Descriptions come from
 projects.json when set, otherwise the repo's own GitHub description.
 
 A token in $GITHUB_TOKEN unlocks the contribution and streak numbers (they need
 the GraphQL API). Without one the card still renders, minus those three tiles.
+
+HackerRank has no official API and sometimes blocks CI runners. If the fetch
+fails, the card falls back to assets/hackerrank.json, e.g.
+    [{"name": "Problem Solving", "stars": 5, "solved": 150}]
 """
 
 from __future__ import annotations
 
 import argparse
+import base64
 import datetime as dt
 import json
+import math
 import os
 import sys
 import urllib.error
@@ -30,17 +38,21 @@ import urllib.request
 from pathlib import Path
 
 UA = {"User-Agent": "cards.py"}
+BROWSER_UA = {
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+}
 
 THEMES = {
     "dark": {
         "bg": "#0d1117", "border": "#30363d", "title": "#FFA116",
         "text": "#c9d1d9", "muted": "#8b949e", "value": "#e6edf3",
-        "accent": "#FFA116",
+        "accent": "#FFA116", "hr": "#2EC866",
     },
     "light": {
         "bg": "#ffffff", "border": "#d0d7de", "title": "#C2410C",
         "text": "#1f2328", "muted": "#57606a", "value": "#1f2328",
-        "accent": "#C2410C",
+        "accent": "#C2410C", "hr": "#1BA94C",
     },
 }
 
@@ -133,11 +145,11 @@ def fetch_leetcode(username: str):
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
             data = json.loads(r.read().decode())
-    except urllib.error.URLError as e:
+    except (urllib.error.URLError, json.JSONDecodeError) as e:
         print(f"  leetcode stats unavailable ({e})", file=sys.stderr)
         return None
 
-    user = data.get("data", {}).get("matchedUser")
+    user = (data.get("data") or {}).get("matchedUser")
     if not user:
         print(f"  leetcode stats unavailable: no such user '{username}'",
               file=sys.stderr)
@@ -147,10 +159,118 @@ def fetch_leetcode(username: str):
               for c in user["submitStatsGlobal"]["acSubmissionNum"]}
     total = counts.get("All", 0)
     rating = None
-    ranking = data.get("data", {}).get("userContestRanking")
+    ranking = (data.get("data") or {}).get("userContestRanking")
     if ranking and ranking.get("rating"):
         rating = round(ranking["rating"])
     return total, counts.get("Easy", 0), counts.get("Medium", 0), counts.get("Hard", 0), rating
+
+
+LEETCODE_BADGE_QUERY = """
+query($username:String!){
+  matchedUser(username:$username){
+    badges{ displayName icon }
+  }
+  userContestRanking(username:$username){
+    rating
+    topPercentage
+    attendedContestsCount
+    badge{ name }
+  }
+}
+"""
+
+
+def fetch_image_uri(url: str, max_bytes: int = 150_000):
+    """Download an image and return it as a data: URI.
+
+    GitHub serves README SVGs through <img>, which blocks any external
+    resource inside them, so badge icons must be embedded, not linked.
+    """
+    if url.startswith("//"):
+        url = "https:" + url
+    elif url.startswith("/"):
+        url = "https://leetcode.com" + url
+    try:
+        req = urllib.request.Request(url, headers=BROWSER_UA)
+        with urllib.request.urlopen(req, timeout=20) as r:
+            raw = r.read(max_bytes + 1)
+            ctype = r.headers.get_content_type()
+    except Exception as e:  # noqa: BLE001 - any failure just means no icon
+        print(f"  badge icon skipped ({e})", file=sys.stderr)
+        return None
+    if len(raw) > max_bytes:
+        return None
+    if not ctype.startswith("image/"):
+        ctype = "image/png"
+    return f"data:{ctype};base64,{base64.b64encode(raw).decode()}"
+
+
+def fetch_leetcode_badges(username: str):
+    """Return dict(contest=..., badges=[(name, data_uri|None)]) or None."""
+    body = json.dumps({"query": LEETCODE_BADGE_QUERY,
+                       "variables": {"username": username}}).encode()
+    req = urllib.request.Request(
+        "https://leetcode.com/graphql", data=body,
+        headers={**BROWSER_UA, "Content-Type": "application/json",
+                 "Referer": f"https://leetcode.com/{username}/"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            data = json.loads(r.read().decode())
+    except (urllib.error.URLError, json.JSONDecodeError) as e:
+        print(f"  leetcode badges unavailable ({e})", file=sys.stderr)
+        return None
+
+    d = data.get("data") or {}
+    user = d.get("matchedUser")
+    if not user:
+        return None
+
+    contest = d.get("userContestRanking") or {}
+    contest_info = None
+    if contest.get("rating"):
+        contest_info = {
+            "badge": (contest.get("badge") or {}).get("name"),  # Knight / Guardian
+            "rating": round(contest["rating"]),
+            "top": contest.get("topPercentage"),
+            "attended": contest.get("attendedContestsCount", 0),
+        }
+
+    raw = user.get("badges") or []
+    # contest tiers first, so Knight/Guardian always make the cut
+    raw.sort(key=lambda b: 0 if b["displayName"] in ("Knight", "Guardian") else 1)
+    badges = []
+    for b in raw[:6]:
+        uri = fetch_image_uri(b["icon"]) if b.get("icon") else None
+        badges.append((b["displayName"], uri))
+    return {"contest": contest_info, "badges": badges}
+
+
+def fetch_hackerrank(username: str, fallback: Path):
+    """Return [(badge_name, stars, solved)]. Tries the public endpoint, then a
+    hand-edited JSON file (HackerRank blocks some CI IPs via Cloudflare)."""
+    out = []
+    url = f"https://www.hackerrank.com/rest/hackers/{username}/badges"
+    try:
+        req = urllib.request.Request(url, headers={**BROWSER_UA, "Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            data = json.loads(r.read().decode())
+        for m in data.get("models", []):
+            stars = int(m.get("stars") or 0)
+            if m.get("badge_name") and stars > 0:
+                out.append((m["badge_name"], min(stars, 5), int(m.get("solved") or 0)))
+    except Exception as e:  # noqa: BLE001
+        print(f"  hackerrank fetch failed ({e})", file=sys.stderr)
+
+    if not out and fallback.exists():
+        try:
+            for x in json.loads(fallback.read_text(encoding="utf-8")):
+                out.append((x["name"], min(int(x["stars"]), 5), int(x.get("solved", 0))))
+            print(f"  hackerrank: using {fallback}", file=sys.stderr)
+        except Exception as e:  # noqa: BLE001
+            print(f"  hackerrank fallback unreadable ({e})", file=sys.stderr)
+    out.sort(key=lambda b: (-b[1], -b[2]))
+    return out
 
 
 CONTRIB_QUERY = """
@@ -306,6 +426,81 @@ def render_stats(user, sections, theme):
     return frame(W, H, c, "".join(out), f"{user} GitHub statistics")
 
 
+def render_coding(lc, hr, theme):
+    """LeetCode badge row (icons embedded as base64) + HackerRank hex badges."""
+    c = THEMES[theme]
+    W, pad = 480, 22
+    cols = 6
+    cw = (W - 2 * pad) / cols
+    out = []
+    y = pad + 14
+
+    if lc:
+        out.append(f'<text x="{pad}" y="{y}" font-size="15" font-weight="700" '
+                   f'fill="{c["title"]}">LeetCode</text>')
+        ct = lc.get("contest")
+        if ct:
+            bits = [ct["badge"]] if ct.get("badge") else []
+            bits.append(f'{ct["rating"]} rating')
+            if ct.get("top"):
+                bits.append(f'top {ct["top"]:.1f}%')
+            out.append(f'<text x="{W - pad}" y="{y}" font-size="11" text-anchor="end" '
+                       f'fill="{c["muted"]}">{esc(" · ".join(bits))}</text>')
+        y += 12
+        out.append(f'<line x1="{pad}" y1="{y}" x2="{W - pad}" y2="{y}" stroke="{c["border"]}"/>')
+        y += 14
+        if lc["badges"]:
+            size = 52
+            for i, (name, uri) in enumerate(lc["badges"]):
+                cx = pad + (i % cols) * cw + cw / 2
+                if uri:
+                    out.append(f'<image href="{uri}" x="{cx - size / 2:.1f}" y="{y}" '
+                               f'width="{size}" height="{size}"/>')
+                else:
+                    out.append(f'<circle cx="{cx:.1f}" cy="{y + size / 2}" r="22" '
+                               f'fill="none" stroke="{c["accent"]}" stroke-width="2"/>')
+                label = name if len(name) <= 13 else name[:12] + "…"
+                out.append(f'<text x="{cx:.1f}" y="{y + size + 14}" font-size="9.5" '
+                           f'text-anchor="middle" fill="{c["muted"]}">{esc(label)}</text>')
+            y += size + 22
+        else:
+            out.append(f'<text x="{pad}" y="{y + 10}" font-size="11" fill="{c["muted"]}">'
+                       f'No badges yet</text>')
+            y += 22
+
+    if hr:
+        if lc:
+            y += 18
+        out.append(f'<text x="{pad}" y="{y}" font-size="15" font-weight="700" '
+                   f'fill="{c["hr"]}">HackerRank</text>')
+        y += 12
+        out.append(f'<line x1="{pad}" y1="{y}" x2="{W - pad}" y2="{y}" stroke="{c["border"]}"/>')
+        y += 16
+        r = 20
+        for i, (name, stars, solved) in enumerate(hr[:12]):
+            col, row = i % cols, i // cols
+            cx = pad + col * cw + cw / 2
+            cy = y + r + row * 84
+            pts = " ".join(
+                f"{cx + r * math.cos(math.radians(-90 + 60 * k)):.1f},"
+                f"{cy + r * math.sin(math.radians(-90 + 60 * k)):.1f}"
+                for k in range(6))
+            out.append(f'<polygon points="{pts}" fill="{c["hr"]}"/>')
+            out.append(f'<text x="{cx:.1f}" y="{cy + 6:.1f}" font-size="17" font-weight="700" '
+                       f'text-anchor="middle" fill="#ffffff">{esc(name[0].upper())}</text>')
+            label = name if len(name) <= 13 else name[:12] + "…"
+            out.append(f'<text x="{cx:.1f}" y="{cy + r + 15:.1f}" font-size="9.5" '
+                       f'text-anchor="middle" fill="{c["muted"]}">{esc(label)}</text>')
+            sx = cx - (stars * 10 - 2) / 2
+            for s in range(stars):
+                out.append(icon(ICON_STAR, sx + s * 10, cy + r + 21, 8, c["accent"]))
+        rows = (min(len(hr), 12) + cols - 1) // cols
+        y += r * 2 + (rows - 1) * 84 + 28
+
+    H = round(y + pad - 6)
+    return frame(W, H, c, "".join(out), "LeetCode and HackerRank badges")
+
+
 def render_repo(repo, theme):
     c = THEMES[theme]
     W, H = 420, 132
@@ -359,7 +554,12 @@ def main(argv=None):
     p.add_argument("--projects", type=Path, default=Path("assets/projects.json"),
                    help="repos to render cards for, with description overrides")
     p.add_argument("--leetcode", metavar="USERNAME",
-                   help="also add a LeetCode-solved tile to the stat card")
+                   help="add LeetCode tiles to the stat card + badges to the coding card")
+    p.add_argument("--hackerrank", metavar="USERNAME",
+                   help="add HackerRank badges to the coding card")
+    p.add_argument("--hackerrank-fallback", type=Path,
+                   default=Path("assets/hackerrank.json"),
+                   help="hand-edited badges used when the HackerRank fetch is blocked")
     args = p.parse_args(argv)
 
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
@@ -413,6 +613,19 @@ def main(argv=None):
         dest.write_text(render_stats(args.user, sections, theme), encoding="utf-8")
     tile_count = sum(len(t) for _, t in sections)
     print(f"wrote card-stats-*.svg  ({len(sections)} sections, {tile_count} tiles)")
+
+    # ---- coding badges card (LeetCode + HackerRank) ----
+    lc_badges = fetch_leetcode_badges(args.leetcode) if args.leetcode else None
+    hr_badges = (fetch_hackerrank(args.hackerrank, args.hackerrank_fallback)
+                 if args.hackerrank else [])
+    if lc_badges or hr_badges:
+        for theme in ("dark", "light"):
+            dest = args.out / f"card-coding-{theme}.svg"
+            dest.write_text(render_coding(lc_badges, hr_badges, theme), encoding="utf-8")
+        n_lc = len(lc_badges["badges"]) if lc_badges else 0
+        print(f"wrote card-coding-*.svg  ({n_lc} leetcode badges, {len(hr_badges)} hackerrank badges)")
+    else:
+        print("  note: no coding badges fetched, skipping card-coding-*.svg", file=sys.stderr)
 
     if not args.projects.exists():
         print(f"no {args.projects}, skipping repo cards")
