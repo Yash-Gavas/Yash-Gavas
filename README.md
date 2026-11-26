@@ -129,7 +129,15 @@ distributed architectures, and automates the parts of the job that don't need a 
 
 <br><br>
 
-<img src="assets/metrics.achievements.svg" width="90%" alt="achievements">
+<picture>
+  <source media="(prefers-color-scheme: dark)"  srcset="assets/card-coding-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="assets/card-coding-light.svg">
+  <img src="assets/card-coding-dark.svg" width="480" alt="LeetCode and HackerRank badges">
+</picture>
+
+<br><br>
+
+<img src="assets/metrics.achievements.svg" width="90%" alt="GitHub achievements">
 
 </div>
 
