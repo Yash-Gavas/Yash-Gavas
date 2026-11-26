@@ -1,0 +1,10 @@
+{
+  "leetcode": {
+    "contest": {"badge": "Knight", "rating": 1850, "top": 5.0},
+    "badges": ["Knight", "50 Days Badge"]
+  },
+  "hackerrank": [
+    {"name": "Problem Solving", "stars": 5, "solved": 100},
+    {"name": "Python", "stars": 5, "solved": 40}
+  ]
+}
