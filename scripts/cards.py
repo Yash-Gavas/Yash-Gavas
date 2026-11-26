@@ -32,8 +32,10 @@ import datetime as dt
 import json
 import math
 import os
+import re
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -211,7 +213,7 @@ def leetcode_gql(query: str, username: str):
     return payload.get("data") or {}
 
 
-def fetch_image_uri(url: str, max_bytes: int = 150_000):
+def fetch_image_uri(url: str, max_bytes: int = 900_000):
     """Download an image and return it as a data: URI.
 
     GitHub serves README SVGs through <img>, which blocks any external
@@ -221,18 +223,25 @@ def fetch_image_uri(url: str, max_bytes: int = 150_000):
         url = "https:" + url
     elif url.startswith("/"):
         url = "https://leetcode.com" + url
+    # spaces / non-ASCII in a path make urllib raise before sending anything
+    url = urllib.parse.quote(url, safe=":/?&=%#@+,;~")
     try:
-        req = urllib.request.Request(url, headers=BROWSER_UA)
+        req = urllib.request.Request(url, headers={
+            **BROWSER_UA,
+            "Referer": "https://leetcode.com/",
+            "Accept": "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5",
+        })
         with urllib.request.urlopen(req, timeout=20) as r:
             raw = r.read(max_bytes + 1)
             ctype = r.headers.get_content_type()
     except Exception as e:  # noqa: BLE001 - any failure just means no icon
-        print(f"  badge icon skipped ({e})", file=sys.stderr)
+        print(f"  badge icon skipped: {url} ({e})", file=sys.stderr)
         return None
     if len(raw) > max_bytes:
+        print(f"  badge icon skipped: {url} (over {max_bytes // 1000} kB)", file=sys.stderr)
         return None
     if not ctype.startswith("image/"):
-        ctype = "image/png"
+        ctype = "image/svg+xml" if url.lower().endswith(".svg") else "image/png"
     return f"data:{ctype};base64,{base64.b64encode(raw).decode()}"
 
 
@@ -473,8 +482,23 @@ def render_coding(lc, hr, theme):
                     out.append(f'<image href="{uri}" x="{cx - size / 2:.1f}" y="{y}" '
                                f'width="{size}" height="{size}"/>')
                 else:
-                    out.append(f'<circle cx="{cx:.1f}" cy="{y + size / 2}" r="22" '
-                               f'fill="none" stroke="{c["accent"]}" stroke-width="2"/>')
+                    # icon could not be downloaded: draw a medal with the
+                    # number from the name ("100 Days Badge" -> 100) instead
+                    mid = y + size / 2
+                    num = re.search(r"\d+", name)
+                    big = num.group(0) if num else name[:1].upper()
+                    small = "DAYS" if "day" in name.lower() else ""
+                    out.append(f'<circle cx="{cx:.1f}" cy="{mid}" r="24" fill="{c["accent"]}" '
+                               f'fill-opacity="0.12" stroke="{c["accent"]}" stroke-width="2"/>')
+                    out.append(f'<circle cx="{cx:.1f}" cy="{mid}" r="19" fill="none" '
+                               f'stroke="{c["accent"]}" stroke-opacity="0.45" stroke-width="1"/>')
+                    out.append(f'<text x="{cx:.1f}" y="{mid + (3 if small else 7):.1f}" '
+                               f'font-size="{15 if len(big) < 4 else 12}" font-weight="700" '
+                               f'text-anchor="middle" fill="{c["accent"]}">{esc(big)}</text>')
+                    if small:
+                        out.append(f'<text x="{cx:.1f}" y="{mid + 14:.1f}" font-size="7.5" '
+                                   f'font-weight="700" letter-spacing="0.08em" '
+                                   f'text-anchor="middle" fill="{c["accent"]}">{small}</text>')
                 label = name if len(name) <= 13 else name[:12] + "…"
                 out.append(f'<text x="{cx:.1f}" y="{y + size + 14}" font-size="9.5" '
                            f'text-anchor="middle" fill="{c["muted"]}">{esc(label)}</text>')
